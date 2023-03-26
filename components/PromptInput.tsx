@@ -1,7 +1,9 @@
 'use client'
 
+import fetchImages from "@/lib/fetchImages";
 import fetchSuggestionFromChatGPT from "@/lib/fetchSuggestionFromChatGPT";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import toast from "react-hot-toast";
 import useSWR from "swr";
 
 function PromptInput() {
@@ -14,11 +16,59 @@ function PromptInput() {
       revalidateOnFocus: false,
     });
 
+    const { mutate: updateImages } = useSWR("images", fetchImages, {
+      revalidateOnFocus: false,
+    });
+
+    const submitPrompt =  async (useSuggestion?: boolean) => {
+      const inputPrompt = input;
+      setInput("");
+
+      const notificationPrompt = inputPrompt || suggestion;
+      const notificationPromptShort = notificationPrompt.slice(0, 20);
+
+      const notification = toast.loading(
+        `DALL·E is creating: ${notificationPromptShort}...`
+      );
+
+      // P being the prompt we send to the API
+      const p = useSuggestion ? suggestion : inputPrompt;
+
+      const res = await fetch('/api/generateImage', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({prompt: p})
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        toast.error(data.error);
+      } else {
+        toast.success(`Your AI Art has been Generated!`, {
+          id: notification,
+        });
+      }
+
+      updateImages();
+
+    };
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      await submitPrompt();
+    }
+
     const loading = isLoading || isValidating;
 
   return (
     <div className="m-10">
-        <form className="flex flex-col lg:flex-row shadow-md shadow-slate-400/10 border rounded-md lg:divide-x">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col lg:flex-row shadow-md shadow-slate-400/10 border rounded-md lg:divide-x">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -37,6 +87,7 @@ function PromptInput() {
             </button>
             <button
               type="button"
+              onClick={() => submitPrompt(true)}
               className="p-4 bg-green-400 text-white transition-colors duration-200 font-bold disabled:text-gray-300 disabled:cursor-not-allowed disabled:bg-grey-400">Use Suggestion</button>
             <button
               type="button"
