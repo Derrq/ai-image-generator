@@ -15,7 +15,7 @@ function Header() {
 
             <div>
                 <h1 className="font-bold">
-                    Derrq's <span className="text-green-500"> AI </span> Image Generator
+                    Derrq &apos; s <span className="text-green-500"> AI </span> Image Generator
                 </h1>
 
                 <h4 className="text-xs"> Powered by DALL-E | Chat GPT | MS Azure</h4>
